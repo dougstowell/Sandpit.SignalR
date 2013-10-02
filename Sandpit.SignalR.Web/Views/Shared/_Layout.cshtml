@@ -23,7 +23,7 @@
         <div class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
             <li class="active"><a href="/home/chat">Chat Example</a></li>
-            <li><a href="/home/interactive">Interactive Example</a></li>
+            <li><a href="/home/moveshape">Move Shape Example</a></li>
           </ul>
           <ul class="nav navbar-nav navbar-right">
             <li class="dropdown">
@@ -32,6 +32,7 @@
                 <li><a href="http://http://www.asp.net/signalr">Signal R on ASP.NET</a></li>
                 <li><a href="http://signalr.net/">SignalR Site</a></li>
                 <li><a href="https://twitter.com/SignalR">Twitter</a></li>
+                <li><a href="http://shootr.signalr.net/">ShootR</a></li>
                 <li class="divider"></li>
                 <li class="dropdown-header">Reference</li>
                 <li><a href="https://github.com/SignalR/SignalR">Code on GitHub</a></li>
@@ -46,6 +47,7 @@
     @RenderBody()
 
     @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/jqueryui")
     @Scripts.Render("~/bundles/bootstrapjs")
 
     @RenderSection("scripts", required: false)

@@ -14,7 +14,7 @@ namespace Sandpit.SignalR.Web.Controllers
             return View();
         }
 
-        public ActionResult Interactive()
+        public ActionResult MoveShape()
         {
             return View();
         }

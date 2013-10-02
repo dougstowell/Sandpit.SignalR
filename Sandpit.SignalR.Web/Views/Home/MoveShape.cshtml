@@ -1,0 +1,71 @@
+﻿@{
+    ViewBag.Title = "Move Shape Example";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section styles {
+    <style>
+        #shape {
+            width: 100px;
+            height: 100px;
+            background-color: #FF0000;
+        }
+    </style>
+}
+
+    <div class="container">
+        <div class="jumbotron">
+            <h1>Move Shape Example</h1>
+            <p>Please select a demo from the header above.</p>
+        </div>
+    </div> 
+
+
+@section scripts {
+    @Scripts.Render("~/bundles/signalr")
+    <script src="/signalr/hubs"></script>
+
+    <script>
+        $(function () {
+            var moveShapeHub = $.connection.moveShape;
+            var $shape = $("#shape");
+
+            var messageFrequency = 10;
+            var updateRate = 1000 / messageFrequency;
+
+            var shapeModel = {
+                left: 0,
+                top: 0
+            };
+
+            var moved = false;
+
+            moveShapeHub.client.updateShape = function (model) {
+                shapeModel = model;
+                //$shape.css({ left: model.left, top: model.top });
+                $shape.animate(shapeModel, { duration: updateRate, queue: false });
+            };
+
+            $.connection.hub.start().done(function () {
+                $shape.draggable({
+                    drag: function () {
+                        shapeModel = $shape.offset();
+                        moved = true;
+                    }
+                });
+
+                // Start the client side server update interval
+                setInterval(updateServerModel, updateRate);
+            });
+
+            function updateServerModel() {
+                if (moved) {
+                    moveShapeHub.server.updateModel(shapeModel);
+                    moved = false;
+                }
+            }
+        });
+    </script>
+}
+
+<div id="shape" />

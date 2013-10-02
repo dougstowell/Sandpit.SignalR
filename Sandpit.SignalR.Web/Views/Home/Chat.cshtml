@@ -26,7 +26,7 @@
     <script>
         $(function () {
             // Reference the auto-generated proxy for the hub.  
-            var chat = $.connection.chatHub;
+            var chat = $.connection.chat;
             // Create a function that the hub can call back to display messages.
             chat.client.addNewMessageToPage = function (name, message) {
                 // Add the message to the page. 
