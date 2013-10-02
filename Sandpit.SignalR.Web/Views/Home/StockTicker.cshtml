@@ -1,0 +1,109 @@
+﻿@{
+    ViewBag.Title = "Stock Ticker Example";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section styles {
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+            font-size: 16px;
+        }
+        #stockTable table {
+            border-collapse: collapse;
+        }
+            #stockTable table th, #stockTable table td {
+                padding: 2px 6px;
+            }
+            #stockTable table td {
+                text-align: right;
+            }
+        #stockTable .loading td {
+            text-align: left;
+        }
+    </style>
+}
+
+@section menuOptions {
+    <ul class="nav navbar-nav">
+        <li><a href="/home/chat">Chat Example</a></li>
+        <li><a href="/home/moveshape">Move Shape Example</a></li>
+        <li class="active"><a href="/home/stockticker">Stock Ticker Example</a></li>
+    </ul>
+}
+
+    <div class="container">
+        <div class="jumbotron">
+            <h1>Stock Ticker Example</h1>
+            <p>Please select a demo from the header above.</p>
+        </div>
+
+        <div id="stockTable">
+            <table border="1">
+                <thead>
+                    <tr><th>Symbol</th><th>Price</th><th>Open</th><th>Change</th><th>%</th></tr>
+                </thead>
+                <tbody>
+                    <tr class="loading"><td colspan="5">loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div> 
+
+@section scripts {
+    @Scripts.Render("~/bundles/signalr")
+    <script src="/signalr/hubs"></script>
+
+    <script>
+        // A simple templating method for replacing placeholders enclosed in curly braces.
+        if (!String.prototype.supplant) {
+            String.prototype.supplant = function (o) {
+                return this.replace(/{([^{}]*)}/g,
+                function (a, b) {
+                    var r = o[b];
+                    return typeof r === 'string' || typeof r === 'number' ? r : a;
+                }
+            );
+            };
+        }
+
+        $(function () {
+            var ticker = $.connection.stockTickerMini;
+            var up = '▲';
+            var down = '▼';
+            var $stockTable = $('#stockTable');
+            var $stockTableBody = $stockTable.find('tbody');
+            var rowTemplate = '<tr data-symbol="{Symbol}"><td>{Symbol}</td><td>{Price}</td><td>{DayOpen}</td><td>{Direction} {Change}</td><td>{PercentChange}</td></tr>';
+
+            function formatStock(stock) {
+                return $.extend(stock, {
+                    Price: stock.Price.toFixed(2),
+                    PercentChange: (stock.PercentChange * 100).toFixed(2) + '%',
+                    Direction: stock.Change === 0 ? '' : stock.Change >= 0 ? up : down
+                });
+            }
+
+            function init() {
+                ticker.server.getAllStocks().done(function (stocks) {
+                    $stockTableBody.empty();
+                    $.each(stocks, function () {
+                        var stock = formatStock(this);
+                        $stockTableBody.append(rowTemplate.supplant(stock));
+                    });
+                });
+            }
+
+            // Add a client-side hub method that the server will call
+            ticker.client.updateStockPrice = function (stock) {
+                var displayStock = formatStock(stock),
+                $row = $(rowTemplate.supplant(displayStock));
+
+                $stockTableBody.find('tr[data-symbol=' + stock.Symbol + ']').replaceWith($row);
+            }
+
+            // Start the connection
+            $.connection.hub.logging = true;
+            $.connection.hub.start().done(init);
+        });
+    </script>
+}
