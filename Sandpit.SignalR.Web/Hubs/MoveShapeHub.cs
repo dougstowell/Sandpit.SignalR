@@ -4,6 +4,7 @@ using System.Linq;
 using System.Web;
 using Microsoft.AspNet.SignalR.Hubs;
 using Microsoft.AspNet.SignalR;
+using System.Threading.Tasks;
 
 
 namespace Sandpit.SignalR.Web
@@ -11,7 +12,6 @@ namespace Sandpit.SignalR.Web
     [HubName("moveShape")]
     public class MoveShapeHub : Hub
     {
-        // Is set via the constructor on each creation
         private ShapeBroadcaster _broadcaster;
 
         public MoveShapeHub()
@@ -27,8 +27,25 @@ namespace Sandpit.SignalR.Web
         public void UpdateModel(ShapeModel clientModel)
         {
             clientModel.LastUpdatedBy = Context.ConnectionId;
-            // Update the shape model within our broadcaster
             _broadcaster.UpdateShape(clientModel);
+        }
+
+        public override Task OnConnected()
+        {
+            _broadcaster.AddConnection(Context.ConnectionId);
+            return null;
+        }
+
+        public override Task OnDisconnected()
+        {
+            _broadcaster.RemoveConnection(Context.ConnectionId);
+            return null;
+        }
+
+        public override Task OnReconnected()
+        {
+            _broadcaster.AddConnection(Context.ConnectionId);
+            return null;
         }
     }
 }

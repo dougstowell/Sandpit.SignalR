@@ -5,6 +5,12 @@
 
 @section styles {
     <style>
+        #shapeParent {
+            width: 400px;
+            height: 400px;
+            background-color: #FFFF00;
+        }
+                
         #shape {
             width: 100px;
             height: 100px;
@@ -24,10 +30,12 @@
     <div class="container">
         <div class="jumbotron">
             <h1>Move Shape Example</h1>
-            <p>Please select a demo from the header above.</p>
+            <p id="pageSubtitle"></p>
         </div>
 
-        <div id="shape" />
+        <div id="shapeParent">
+            <div id="shape" />        
+        </div>
     </div> 
 
 @section scripts {
@@ -38,6 +46,7 @@
         $(function () {
             var moveShapeHub = $.connection.moveShape;
             var $shape = $("#shape");
+            var $pageSubtitle = $("#pageSubtitle");
 
             var messageFrequency = 10;
             var updateRate = 1000 / messageFrequency;
@@ -53,6 +62,10 @@
                 shapeModel = model;
                 //$shape.css({ left: model.left, top: model.top });
                 $shape.animate(shapeModel, { duration: updateRate, queue: false });
+            };
+
+            moveShapeHub.client.clientCountChanged = function (count) {
+                $pageSubtitle.html("There are currently " + count + " active connections");
             };
 
             $.connection.hub.start().done(function () {
