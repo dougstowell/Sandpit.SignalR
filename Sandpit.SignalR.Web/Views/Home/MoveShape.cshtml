@@ -31,11 +31,10 @@
         <div class="jumbotron">
             <h1>Move Shape Example</h1>
             <p id="pageSubtitle"></p>
+            <p id="coords"></p>
         </div>
 
-        <div id="shapeParent">
-            <div id="shape" />        
-        </div>
+        <div id="shape" />        
     </div> 
 
 @section scripts {
@@ -47,6 +46,7 @@
             var moveShapeHub = $.connection.moveShape;
             var $shape = $("#shape");
             var $pageSubtitle = $("#pageSubtitle");
+            var $coords = $("#coords");
 
             var messageFrequency = 10;
             var updateRate = 1000 / messageFrequency;
@@ -62,6 +62,8 @@
                 shapeModel = model;
                 //$shape.css({ left: model.left, top: model.top });
                 $shape.animate(shapeModel, { duration: updateRate, queue: false });
+
+                $coords.html("Left: " + shapeModel.left + ", Top: " + shapeModel.top);
             };
 
             moveShapeHub.client.clientCountChanged = function (count) {
@@ -73,8 +75,7 @@
                     drag: function () {
                         shapeModel = $shape.offset();
                         moved = true;
-                    },
-                    containment: "parent"
+                    }
                 });
 
                 // Start the client side server update interval
@@ -84,6 +85,7 @@
             function updateServerModel() {
                 if (moved) {
                     moveShapeHub.server.updateModel(shapeModel);
+                    $coords.html("Left: " + shapeModel.left + ", Top: " + shapeModel.top);
                     moved = false;
                 }
             }
