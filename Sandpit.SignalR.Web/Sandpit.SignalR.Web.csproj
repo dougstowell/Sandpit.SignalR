@@ -264,6 +264,7 @@
     <Content Include="Views\Home\Chat.cshtml" />
     <Content Include="Views\Home\MoveShape.cshtml" />
     <Content Include="Views\Home\StockTicker.cshtml" />
+    <Content Include="Views\Home\TwitterMap.cshtml" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

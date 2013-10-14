@@ -4,9 +4,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <title>@ViewBag.Title</title>
+    
+    @RenderSection("headScripts", required: false)
+
     @Styles.Render("~/Content/css")
     @Styles.Render("~/Content/bootstrapcss")
-
     @RenderSection("styles", required: false)
 </head>
 <body>

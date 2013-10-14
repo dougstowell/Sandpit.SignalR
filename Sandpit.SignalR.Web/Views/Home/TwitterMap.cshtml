@@ -1,0 +1,189 @@
+﻿@{
+    ViewBag.Title = "Twitter Map Example";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section styles {
+    <style>
+      #twitter-map-canvas 
+      {
+        height: 400px;
+        margin: 0px;
+        padding: 0px
+      }
+    </style>
+}
+
+@section menuOptions {
+    <ul class="nav navbar-nav">
+        <li><a href="/home/chat">Chat</a></li>
+        <li><a href="/home/moveshape">Move Shape</a></li>
+        <li><a href="/home/stockticker">Stock Ticker</a></li>
+        <li class="active"><a href="/home/twittermap">Twitter Map</a></li>
+    </ul>
+}
+
+    <div class="container">
+        <div class="jumbotron">
+            <h1>Twitter Map Example</h1>
+        </div>
+
+        <div class="panel panel-default">
+          <div class="panel-heading">Search</div>
+          <div class="panel-body">
+            <div class="row">
+              <div class="col-lg-6">
+                <div class="input-group">
+                  <input id="text-search-tweets" type="text" class="form-control">
+                  <span class="input-group-btn">
+                    <button id="btn-search-tweets" class="btn btn-default" type="button">Go!</button>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel panel-default">
+          <div class="panel-heading">Map Results</div>
+          <div class="panel-body">
+            <div class="row">
+              <div class="col-lg-12">
+                <div id="twitter-map-canvas">
+
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel panel-default">
+          <div class="panel-heading">Tweet Results</div>
+          <div class="panel-body">
+            <div class="row">
+              <div class="col-lg-12">
+                <div id="twitter-chat" class="list-group">
+
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+    </div> 
+
+@section scripts {
+    @Scripts.Render("~/bundles/signalr")
+    <script src="http://localhost:8080/signalr/hubs"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
+
+    <script>
+        var map;
+        var markers = [];
+        var harrLatLng = new google.maps.LatLng(53.9910, -1.5390);
+        var leedsLatLng = new google.maps.LatLng(53.7997, -1.5492);
+
+        function initMap() {
+            var mapOptions = {
+                zoom: 12,
+                center: leedsLatLng,
+                mapTypeId: google.maps.MapTypeId.ROADMAP
+            };
+            map = new google.maps.Map(document.getElementById('twitter-map-canvas'), mapOptions);
+        }
+
+        function addMarker(location, title, image) {
+            var marker = new google.maps.Marker({
+                position: location,
+                map: map,
+                title: title,
+                animation: google.maps.Animation.DROP,
+                icon: image
+            });
+
+            return marker;
+        }
+
+        $(function () {
+            initMap();
+
+            //Set the hubs URL for the connection
+            $.connection.hub.url = "http://localhost:8080/signalr";
+
+            var tweetMap = $.connection.twitterMap;
+
+            function init() {
+                tweetMap.server.getAllTweets().done(function (tweets) {
+                    $.each(tweets, function () {
+                        var tweet = this;
+
+                        var tweetLocation = new google.maps.LatLng(tweet.Latitude, tweet.Longitude);
+                        var marker = addMarker(tweetLocation, tweet.Text, tweet.ImageSource);
+                        markers.push(marker);
+
+                        var contentString =
+                            '<div id="content">' +
+                            '<strong>' + tweet.UserName + '</strong>' +
+                            '<div id="bodyContent">' +
+                            '<p>' + tweet.Text + '</p>' +
+                            '</div>' +
+                            '</div>';
+
+                        var infowindow = new google.maps.InfoWindow({
+                            content: contentString,
+                            maxWidth: 500
+                        });
+
+                        google.maps.event.addListener(marker, 'click', function () {
+                            infowindow.open(map, marker);
+                        });
+                    });
+                });
+            }
+
+            $('#btn-search-tweets').click(function () {
+                var term = $('#text-search-tweets').val();
+                tweetMap.server.setSearchTerm(term);
+
+                for (var i = 0; i < markers.length; i++) {
+                    markers[i].setMap(null);
+                }
+
+                init();
+            });
+
+            // Add a client-side hub method that the server will call
+            tweetMap.client.refreshTweets = function (tweets) {
+                $("#twitter-chat").fadeOut("slow", function () {
+                    $('#twitter-chat').empty();
+
+                    $.each(tweets, function (index, value) {
+                        var a = $('<a>')
+                        .attr('href', '#')
+                        .addClass('list-group-item')
+                        .appendTo('#twitter-chat');
+
+                        $('<h4>')
+                        .addClass('list-group-item-heading')
+                        .html(value.UserName + ' on ' + value.CreatedAt + ' via ' + value.Source)
+                        .appendTo(a);
+
+                        $('<p>')
+                        .addClass('list-group-item-text')
+                        .html(value.Text)
+                        .appendTo(a);
+                    });
+
+                    $('#twitter-chat').fadeIn("slow");
+                });
+            }
+
+            // Start the connection
+            $.connection.hub.logging = true;
+            // Start the connection.
+            $.connection.hub.start().done(function () {
+                init();
+                $('#text-search-tweets').val(tweetMap.server.getSearchTerm());
+            });
+        });
+    </script>
+}

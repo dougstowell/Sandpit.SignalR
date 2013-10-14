@@ -23,5 +23,10 @@ namespace Sandpit.SignalR.Web.Controllers
         {
             return View();
         }
+
+        public ActionResult TwitterMap()
+        {
+            return View();
+        }
     }
 }
