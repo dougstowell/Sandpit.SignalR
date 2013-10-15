@@ -24,26 +24,6 @@
 }
 
     <div class="container">
-        <div class="jumbotron">
-            <h1>Twitter Map Example</h1>
-        </div>
-
-        <div class="panel panel-default">
-          <div class="panel-heading">Search</div>
-          <div class="panel-body">
-            <div class="row">
-              <div class="col-lg-6">
-                <div class="input-group">
-                  <input id="text-search-tweets" type="text" class="form-control">
-                  <span class="input-group-btn">
-                    <button id="btn-search-tweets" class="btn btn-default" type="button">Go!</button>
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <div class="panel panel-default">
           <div class="panel-heading">Map Results</div>
           <div class="panel-body">
@@ -91,16 +71,71 @@
             map = new google.maps.Map(document.getElementById('twitter-map-canvas'), mapOptions);
         }
 
-        function addMarker(location, title, image) {
+        function addMarker(location, title, imageUrl) {
+            var twitterIcon = 
+                new google.maps.MarkerImage(imageUrl, null, null, null, new google.maps.Size(15, 15));
+
             var marker = new google.maps.Marker({
                 position: location,
                 map: map,
                 title: title,
                 animation: google.maps.Animation.DROP,
-                icon: image
+                icon: twitterIcon
             });
 
             return marker;
+        }
+
+        function bindData(tweets) {
+            // Empty the display.
+            for (var i = 0; i < markers.length; i++) {
+                markers[i].setMap(null);
+            }
+            markers = new Array();
+
+            $('#twitter-chat').empty();
+
+            $.each(tweets, function(index, value) {
+                // Add markers.
+                var tweet = this;
+
+                var tweetLocation = new google.maps.LatLng(tweet.Latitude, tweet.Longitude);
+                var marker = addMarker(tweetLocation, tweet.Text, tweet.ImageSource);
+                markers.push(marker);
+
+                var contentString =
+                            '<div id="content">' +
+                            '<strong>' + tweet.UserName + '</strong>' +
+                            '<div id="bodyContent">' +
+                            '<p>' + tweet.Text + '</p>' +
+                            '</div>' +
+                            '</div>';
+
+                var infowindow = new google.maps.InfoWindow({
+                    content: contentString,
+                    maxWidth: 500
+                });
+
+                google.maps.event.addListener(marker, 'click', function () {
+                    infowindow.open(map, marker);
+                });
+
+                // Add tweets to list.
+                var a = $('<a>')
+                        .attr('href', '#')
+                        .addClass('list-group-item')
+                        .appendTo('#twitter-chat');
+
+                $('<h4>')
+                        .addClass('list-group-item-heading')
+                        .html(value.UserName + ' on ' + value.CreatedAt + ' via ' + value.Source)
+                        .appendTo(a);
+
+                $('<p>')
+                        .addClass('list-group-item-text')
+                        .html(value.Text)
+                        .appendTo(a);
+            });
         }
 
         $(function () {
@@ -113,65 +148,16 @@
 
             function init() {
                 tweetMap.server.getAllTweets().done(function (tweets) {
-                    $.each(tweets, function () {
-                        var tweet = this;
+                    refreshTweetList(tweets);
 
-                        var tweetLocation = new google.maps.LatLng(tweet.Latitude, tweet.Longitude);
-                        var marker = addMarker(tweetLocation, tweet.Text, tweet.ImageSource);
-                        markers.push(marker);
-
-                        var contentString =
-                            '<div id="content">' +
-                            '<strong>' + tweet.UserName + '</strong>' +
-                            '<div id="bodyContent">' +
-                            '<p>' + tweet.Text + '</p>' +
-                            '</div>' +
-                            '</div>';
-
-                        var infowindow = new google.maps.InfoWindow({
-                            content: contentString,
-                            maxWidth: 500
-                        });
-
-                        google.maps.event.addListener(marker, 'click', function () {
-                            infowindow.open(map, marker);
-                        });
-                    });
+                    bindData(tweets);
                 });
             }
-
-            $('#btn-search-tweets').click(function () {
-                var term = $('#text-search-tweets').val();
-                tweetMap.server.setSearchTerm(term);
-
-                for (var i = 0; i < markers.length; i++) {
-                    markers[i].setMap(null);
-                }
-
-                init();
-            });
 
             // Add a client-side hub method that the server will call
             tweetMap.client.refreshTweets = function (tweets) {
                 $("#twitter-chat").fadeOut("slow", function () {
-                    $('#twitter-chat').empty();
-
-                    $.each(tweets, function (index, value) {
-                        var a = $('<a>')
-                        .attr('href', '#')
-                        .addClass('list-group-item')
-                        .appendTo('#twitter-chat');
-
-                        $('<h4>')
-                        .addClass('list-group-item-heading')
-                        .html(value.UserName + ' on ' + value.CreatedAt + ' via ' + value.Source)
-                        .appendTo(a);
-
-                        $('<p>')
-                        .addClass('list-group-item-text')
-                        .html(value.Text)
-                        .appendTo(a);
-                    });
+                    bindData(tweets);
 
                     $('#twitter-chat').fadeIn("slow");
                 });
@@ -182,7 +168,6 @@
             // Start the connection.
             $.connection.hub.start().done(function () {
                 init();
-                $('#text-search-tweets').val(tweetMap.server.getSearchTerm());
             });
         });
     </script>

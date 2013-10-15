@@ -7,6 +7,7 @@ using System.Threading;
 using LinqToTwitter;
 using Microsoft.AspNet.SignalR;
 using Microsoft.AspNet.SignalR.Hubs;
+using System.IO;
 
 
 namespace Sandpit.SignalR.SelfHost
@@ -35,16 +36,19 @@ namespace Sandpit.SignalR.SelfHost
             }
         }
 
-        public String SearchTerm
+        private IHubConnectionContext Clients
         {
             get;
             set;
         }
 
-        private IHubConnectionContext Clients
+        private String SearchTerm
         {
-            get;
-            set;
+            get
+            {
+                FileInfo fi = new FileInfo("searchTerm.txt");
+                return File.ReadAllText(fi.FullName);
+            }
         }
 
 
@@ -52,7 +56,6 @@ namespace Sandpit.SignalR.SelfHost
         {
             Clients = clients;
 
-            SearchTerm = "Twitter";
             PopulateLatestTweets();
 
             _timer = new Timer(UpdateTweets, null, _updateInterval, _updateInterval);
@@ -61,6 +64,7 @@ namespace Sandpit.SignalR.SelfHost
 
         private void PopulateLatestTweets()
         {
+
             _tweets.Clear();
 
             var auth = new SingleUserAuthorizer
@@ -79,9 +83,8 @@ namespace Sandpit.SignalR.SelfHost
             };
             var twitterCtx = new TwitterContext(auth);
 
-
-            String harrGeoCode = "53.9910,-1.5390,50km";
-            String leedsGeoCode = "53.7997,-1.5492,50km";
+            String geoCode = ConfigurationManager.AppSettings["geoCode"];
+            String term = SearchTerm;
 
             //public int Count { get; set; }
             //public string GeoCode { get; set; }
@@ -101,8 +104,8 @@ namespace Sandpit.SignalR.SelfHost
                 from search in twitterCtx.Search
                 where
                     search.Type == SearchType.Search &&
-                    search.Query == SearchTerm &&
-                    search.GeoCode == leedsGeoCode &&
+                    search.Query == term &&
+                    search.GeoCode == geoCode &&
                     search.Locale == "en"
                 select search;
 
@@ -122,8 +125,6 @@ namespace Sandpit.SignalR.SelfHost
                      CreatedAt = status.CreatedAt
                  })
                 .ToList();
-
-            tweetResults.Add(new TweetModel { Id = "1", Text = "Hello from a Dummy Tweet", Longitude = -1.5390, Latitude = 53.9910 });
 
             _tweets.Clear();
             tweetResults.ForEach(t => _tweets.TryAdd(t.Id, t));
